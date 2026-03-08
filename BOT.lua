@@ -19,11 +19,6 @@ local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 local channel = TextChatService:WaitForChild("TextChannels"):WaitForChild("RBXGeneral")
 
-if not authorized[gethwid()] then
-	localPlayer:Kick("Você não tem permissão para executar o script")
-	return
-end
-
 -- Game
 local placeId = game.PlaceId
 local placeName = MarketplaceService:GetProductInfoAsync(game.PlaceId).Name
@@ -37,6 +32,9 @@ local references = {
 
 -- Dados enviados pelo usuário
 local sent = getfenv().Config
+
+-- Determina se o jogador pode usar o script ou não
+local isAuthorized = authorized[gethwid()] ~= nil
 
 -- Determina se os dados estão válido ou não
 local isSentValid = (function()
@@ -202,7 +200,7 @@ if not localPlayer:GetAttribute("Webhooked") then
 							name = "🎮 Execute",
 							value = string.format(
 								"Permitido: %s\nExecutado: %s\nDados enviados:\n```%s```",
-								("desconhecido"), (isSentValid and "sim" or "não"), tableToString(sent or {})
+								(isAuthorized and "sim" or "não"), (isSentValid and "sim" or "não"), tableToString(sent or {})
 							)
 						},
 						{
@@ -242,6 +240,12 @@ end
 
 --== Verificação ==--
 
+-- Verifica se o jogador pode usar o script
+if not isAuthorized then
+	localPlayer:Kick("Você não tem permissão para usar este script")
+	return
+end
+
 -- Verifica se os dados passaram
 if isSentValid then
 	if localPlayer:GetAttribute("Executed") then
@@ -252,11 +256,10 @@ if isSentValid then
 		})
 		return
 	else
-		localPlayer:SetAttribute("Executed", true)	
-		print("Valid data")
+		localPlayer:SetAttribute("Executed", true)
 	end
 else
-	print("Invalid data")
+	localPlayer:Kick("Invalid data")
 	return
 end
 
