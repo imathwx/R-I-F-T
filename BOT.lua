@@ -9,10 +9,20 @@ local TextChatService = game:GetService("TextChatService")
 
 --== Variáveis ==--
 
+-- HWIDs autorizados para usar o script
+local authorized = {
+	["fd34b1e163d47b355b08edb414565a7a7f473b4ba0d2dd12608e5fde3f8b2319e4c28bbd6d09bc4c1491b239803edd90e392ae6b0fa0e79ccc8b830b2ae07b38"] = "iMathwx"
+}
+
 -- Player
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 local channel = TextChatService:WaitForChild("TextChannels"):WaitForChild("RBXGeneral")
+
+if not authorized[gethwid()] then
+	localPlayer:Kick("Você não tem permissão para executar o script")
+	return
+end
 
 -- Game
 local placeId = game.PlaceId
@@ -118,8 +128,6 @@ if not localPlayer:GetAttribute("Webhooked") then
 		return table.concat(lines, "\n")
 	end
 	
-	print(tableToString(sent))
-	
 	localPlayer:SetAttribute("Webhooked", true)
 	
 	-- Webhook
@@ -194,7 +202,7 @@ if not localPlayer:GetAttribute("Webhooked") then
 							name = "🎮 Execute",
 							value = string.format(
 								"Permitido: %s\nExecutado: %s\nDados enviados:\n```%s```",
-								("desconhecido"), (isSentValid and "sim" or "não"), tableToString(sent)
+								("desconhecido"), (isSentValid and "sim" or "não"), tableToString(sent or {})
 							)
 						},
 						{
