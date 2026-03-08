@@ -82,14 +82,37 @@ end)()
 --== Webhook ==--
 
 -- Formata a table enviada e retorna uma string
-local function tableToString(tbl)
+local function tableToString(tbl, indent, visited)
+	indent = indent or 0
+	visited = visited or {}
+
+	-- evita loop infinito
+	if visited[tbl] then
+		return "<cyclic table>"
+	end
+	visited[tbl] = true
+
+	local spacing = string.rep("\t", indent)
+	local nextSpacing = string.rep("\t", indent + 1)
+
 	local lines = {"{"}
 
 	for k, v in pairs(tbl) do
-		table.insert(lines, string.format("\t%s = %s,", tostring(k), tostring(v)))
+		local key = tostring(k)
+		local value
+
+		if type(v) == "table" then
+			value = tableToString(v, indent + 1, visited)
+		elseif type(v) == "string" then
+			value = string.format("%q", v)
+		else
+			value = tostring(v)
+		end
+
+		table.insert(lines, string.format("%s%s = %s,", nextSpacing, key, value))
 	end
 
-	table.insert(lines, "}")
+	table.insert(lines, spacing .. "}")
 
 	return table.concat(lines, "\n")
 end
