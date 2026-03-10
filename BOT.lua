@@ -244,8 +244,7 @@ end
 
 -- Verifica se o jogador pode usar o script
 if not isAuthorized then
-	print(gethwid(), authorized[2])
-	--localPlayer:Kick("Você não tem permissão para usar este script")
+	localPlayer:Kick("Você não tem permissão para usar este script")
 	return
 end
 
@@ -293,7 +292,7 @@ task.spawn(function()
 	while true do
 		for _, msg in ipairs(messages) do
 			channel:SendAsync(msg)
-			task.wait(sent.Delay)
+			task.wait(5)
 		end
 
 		currentIndex += 1
