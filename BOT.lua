@@ -292,7 +292,7 @@ task.spawn(function()
 	while true do
 		for _, msg in ipairs(messages) do
 			channel:SendAsync(msg)
-			task.wait(5)
+			task.wait(sent.Delay)
 		end
 
 		currentIndex += 1
