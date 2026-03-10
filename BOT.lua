@@ -244,7 +244,8 @@ end
 
 -- Verifica se o jogador pode usar o script
 if not isAuthorized then
-	localPlayer:Kick("Você não tem permissão para usar este script")
+	print(gethwid(), authorized[2])
+	--localPlayer:Kick("Você não tem permissão para usar este script")
 	return
 end
 
